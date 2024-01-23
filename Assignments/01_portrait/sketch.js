@@ -5,7 +5,7 @@ function setup() {
 
 function draw() {
   // Draw the face
-  fill(255, 224, 189); // Skin color
+  fill(205, 133, 63); // Skin color
   ellipse(200, 200, 150, 200); // Head
 
   // Draw the eyes
