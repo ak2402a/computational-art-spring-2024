@@ -1,12 +1,13 @@
+/* 
+In this code a small space ship is travelling through space animation is inspired 
+by Star Wars hyperspeed additionally moving the mouse left to right changes the speed of the background
+*/
+
+// Setup Varibles 
 let stars = [];
 let numStars = 800;
-let bitcoinImg;
-let bitcoin;
-let speed = 2; // Default speed for stars
-
-function preload() {
-    bitcoinImg = loadImage('/Users/anishkubal/Documents/GitHub/computational-art-spring-2024/Assignments/01_portrait/Bitcoin.png'); // Ensure this path is correct
-}
+let spaceshipX = 80;
+let spaceshipSpeed = 2;
 
 class Star {
     constructor() {
@@ -41,29 +42,7 @@ function setup() {
     for (let i = 0; i < numStars; i++) {
         stars[i] = new Star();
     }
-
-    // Initialize Bitcoin object
-    bitcoin = {
-        x: width / 2,
-        y: height / 2,
-        xSpeed: 3,
-        ySpeed: 2,
-
-        move: function() {
-            this.x += this.xSpeed;
-            this.y += this.ySpeed;
-            if (this.x > width || this.x < 0) {
-                this.xSpeed *= -1;
-            }
-            if (this.y > height || this.y < 0) {
-                this.ySpeed *= -1;
-            }
-        },
-
-        display: function() {
-            image(bitcoinImg, this.x, this.y, 50, 50); // Adjust the size as needed
-        }
-    };
+    spaceshipX = 0;
 }
 
 function draw() {
@@ -74,8 +53,24 @@ function draw() {
         star.update();
         star.show();
     }
+    translate(-width / 2, -height / 2);
 
-    translate(-width / 2, -height / 2); // Reset translation to draw Bitcoin correctly
-    bitcoin.move();
-    bitcoin.display();
+    fill(255);
+    triangle(spaceshipX, height / 2, spaceshipX - 20, height / 2 + 10, spaceshipX - 20, height / 2 - 10);
+
+    // Animated Flames
+    for (let i = 0; i < 5; i++) {
+        let flameSize = random(5, 15);
+        let flameYOffset = random(-5, 5);
+        fill(255, random(100, 255), 0); // Random orange-red color
+        triangle(spaceshipX - 20, height / 2 + flameYOffset, spaceshipX - 20 - flameSize, height / 2 + flameYOffset + flameSize / 2, spaceshipX - 20 - flameSize, height / 2 + flameYOffset - flameSize / 2);
+    }
+
+    spaceshipX += spaceshipSpeed;
+    if (spaceshipX > width) {
+        spaceshipX = 0;
+    }
 }
+
+
+
