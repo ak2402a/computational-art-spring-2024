@@ -1,1 +1,0 @@
-# computational-art-spring-2024
