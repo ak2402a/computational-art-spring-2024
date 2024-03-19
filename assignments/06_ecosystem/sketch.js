@@ -229,9 +229,6 @@ class Zebra {
     pop();
   }
 }
-
-
-
 function drawSky() {
   let skyTop = color(135, 206, 235);
   let skyBottom = color(250, 215, 160);
