@@ -310,10 +310,7 @@ class Raindrop {
     this.yspeed += grav;
   
     if (this.y > height) {
-      // Log for debugging - check if reset positions are as expected
-      console.log(`Resetting raindrop. CloudX: ${this.cloudX}, CloudY: ${this.cloudY}`);
-  
-      this.x = this.cloudX + random(-10, 10);
+      this.x = this.cloudX + random(-10, 20);
       this.y = this.cloudY + 10; // Ensure this value is correctly placing raindrops
       this.yspeed = map(this.z, 0, 20, 4, 10);
   }
