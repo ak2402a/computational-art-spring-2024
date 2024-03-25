@@ -1,20 +1,58 @@
 let zebras = [];
 let lion;
 const zebraCount = 5;
+let raindrops = [];
+let clouds = []; // Array to store cloud positions
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
+
+  // Initialize zebras
   for (let i = 0; i < zebraCount; i++) {
     zebras.push(new Zebra(random(width), random(height * 0.6, height)));
   }
+
+  // Initialize the lion
   lion = new Lion(random(width), random(height * 0.6, height));
+  
+  // Specifying cloud positions more deliberately
+  clouds = [
+    createVector(width * 0.2, random(50, height * 0.3)),
+    createVector(width * 0.5, random(50, height * 0.3)),
+    createVector(width * 0.8, random(50, height * 0.3))
+  ];
+
+  // Generate raindrops for each cloud, focusing on the center
+  clouds.forEach(cloudPosition => {
+    for (let j = 0; j < 100; j++) { // 100 raindrops per cloud
+      // Focus raindrop generation around the center of the cloud
+      // Since clouds are drawn with ellipses, consider the cloud's x as its center
+      let raindropX = cloudPosition.x + random(-10, 10); // Narrow the range to make it appear more centered
+      let raindropY = cloudPosition.y + 10; // Adjust if your cloud drawing extends below this y position
+      raindrops.push(new Raindrop(raindropX, raindropY));
+    }
+  });
 }
+
 
 function draw() {
   background(255);
   drawSky();
   drawSun();
   drawGround();
+  
+  // Draw and update each cloud
+  clouds.forEach(cloud => {
+    drawClouds(cloud.x, cloud.y);
+  });
+
+  // Batch setting drawing properties for raindrops
+  strokeWeight(2);
+  stroke(138, 43, 226);
+  raindrops.forEach(raindrop => {
+    raindrop.fall();
+    raindrop.show();
+  });
 
   lion.updateTarget(zebras);
   lion.move();
@@ -30,8 +68,8 @@ function draw() {
 }
 
 class Lion {
-  constructor() {
-    this.position = createVector(random(width), random(height * 0.6, height));
+  constructor(x, y) {
+    this.position = createVector(x, y);
     this.velocity = createVector(0, -2);
     this.acceleration = createVector();
     this.maxSpeed = 2;
@@ -76,38 +114,25 @@ class Lion {
     push();
     translate(this.position.x, this.position.y);
     rotate(this.velocity.heading() + PI / 2);
-    
-    // Body
-    fill(252, 209, 22); // Golden color for the body
+    fill(252, 209, 22);
     ellipse(0, 0, 30, 50);
-
-    // Head
-    fill(252, 209, 22); // Same golden color for the head
+    fill(252, 209, 22);
     ellipse(0, -35, 20, 20);
-    
-    // Mane
-    stroke(252, 144, 3); // Darker color for the mane
+    stroke(252, 144, 3);
     strokeWeight(2);
     for (let i = 0; i < TWO_PI; i += PI / 12) {
       let x = cos(i) * 25;
       let y = sin(i) * 25 - 35;
       line(0, -35, x, y);
     }
-    
-    // Eyes
     fill(0);
     ellipse(-5, -37, 3, 3);
     ellipse(5, -37, 3, 3);
-
-    // Tail
     strokeWeight(2);
     line(0, 5, 5, 40);
-    
-    noStroke();
     pop();
   }
 }
-
 
 class Zebra {
   constructor(x, y) {
@@ -128,8 +153,7 @@ class Zebra {
     let avoidDistance = this.size * 5;
     let steer = createVector();
     let diff = p5.Vector.sub(this.position, predator);
-    let d = diff.mag();
-    if (d < avoidDistance) {
+    if (diff.magSq() < avoidDistance * avoidDistance) {
       diff.normalize();
       diff.mult(this.maxSpeed);
       steer = p5.Vector.sub(diff, this.velocity);
@@ -198,37 +222,27 @@ class Zebra {
     push();
     translate(this.position.x, this.position.y);
     rotate(this.velocity.heading() + PI / 2);
-    
-    // Main body
     fill(255);
     ellipse(0, 0, this.size * 0.6, this.size);
-
-    // Head
     push();
     translate(0, -this.size / 2);
     ellipse(0, 0, this.size / 4, this.size / 3);
     pop();
-    
-    // Legs
     stroke(0);
     line(-this.size / 4, this.size / 2, -this.size / 4, this.size / 2 + this.size / 4);
     line(this.size / 4, this.size / 2, this.size / 4, this.size / 2 + this.size / 4);
     line(-this.size / 4, -this.size / 2, -this.size / 4, -this.size / 2 - this.size / 4);
     line(this.size / 4, -this.size / 2, this.size / 4, -this.size / 2 - this.size / 4);
-
-    // Tail
     stroke(0);
     line(0, this.size / 2, 0, this.size / 2 + this.size / 5);
-    
-    // Stripes
     fill(0);
     for (let i = -this.size / 2; i < this.size / 2; i += this.size / 10) {
       ellipse(i, 0, this.size / 20, this.size / 2);
     }
-    
     pop();
   }
 }
+
 function drawSky() {
   let skyTop = color(135, 206, 235);
   let skyBottom = color(250, 215, 160);
@@ -238,6 +252,7 @@ function drawSky() {
     stroke(newColor);
     line(0, y, width, y);
   }
+  drawClouds();
 }
 
 function drawSun() {
@@ -246,14 +261,82 @@ function drawSun() {
   ellipse(width * 0.1, height * 0.2, 100, 100);
 }
 
+function drawClouds(x, y) {
+  fill(240); // Light gray for clouds
+  noStroke();
+  // Drawing a cloud at position (x, y)
+  ellipse(x, y, 120, 60);
+  ellipse(x + 60, y, 140, 70);
+  ellipse(x - 40, y - 20, 160, 60);
+}
+
+
 function drawGround() {
+  let groundY = height * 0.5; // Starting point of the ground
+
+  // Draw the ground
   fill(233, 229, 220);
   noStroke();
-  rect(0, height * 0.5, width, height * 0.5);
+  rect(0, groundY, width, height * 0.5);
+
+  // Add grass
+  stroke(34, 139, 34); // Set grass color
+  strokeWeight(2); // Set grass blade thickness
+
+  // Determine grass density
+  let grassDensity = 5; // Lower number means more dense
+  for (let x = 0; x < width; x += grassDensity) {
+    // Each blade of grass is a line with slight random variations
+    let grassHeight = random(10, 20); // Randomize grass height
+    line(x, groundY, x + random(-5, 5), groundY - grassHeight);
+  }
 }
+
+
+class Raindrop {
+  constructor(cloudX, cloudY) {
+    this.cloudX = cloudX;
+    this.cloudY = cloudY; // Save cloud's X position
+    this.x = cloudX + random(-10, 20); // Initial X based on cloud position
+    this.y = cloudY + 10; // Initial Y slightly below the cloud
+    this.z = random(0, 20);
+    this.len = map(this.z, 0, 20, 10, 20);
+    this.yspeed = map(this.z, 0, 20, 1, 20);
+  }
+
+  fall() {
+    this.y += this.yspeed;
+    const grav = map(this.z, 0, 20, 0, 0.2);
+    this.yspeed += grav;
+  
+    if (this.y > height) {
+      // Log for debugging - check if reset positions are as expected
+      console.log(`Resetting raindrop. CloudX: ${this.cloudX}, CloudY: ${this.cloudY}`);
+  
+      this.x = this.cloudX + random(-10, 10);
+      this.y = this.cloudY + 10; // Ensure this value is correctly placing raindrops
+      this.yspeed = map(this.z, 0, 20, 4, 10);
+  }
+  
+
+    // When the raindrop goes below the canvas, reset it back to its originating cloud's position
+    if (this.y > height) {
+      this.x = this.cloudX + random(-10, 10); // Reset X near the cloud's center
+      this.y = this.cloudY + 10; // Reset Y slightly below the cloud
+      this.yspeed = map(this.z, 0, 20, 4, 10);
+    }
+  }
+
+  show() {
+    stroke(173, 216, 230); // Light blue color for the raindrops
+    let thick = map(this.z, 0, 20, 1, 3);
+    strokeWeight(thick);
+    line(this.x, this.y, this.x, this.y + this.len);
+  }
+}
+
 
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
-
