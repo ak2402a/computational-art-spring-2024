@@ -36,7 +36,7 @@ function draw() {
 }
 
 function keyPressed() {
-  if (key == ' ' && jumper.onGround) { 
+  if (jumper && key == ' ' && jumper.onGround) { 
       jumper.velocity = jumpForce;
       playNote();
   }
