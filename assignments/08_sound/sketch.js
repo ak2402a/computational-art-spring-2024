@@ -7,7 +7,7 @@ let scale = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5']; // Musical scale
 let noteIndex = 0; // Index to track which note to play
 
 function preload() {
-  drumSound = loadSound('Sounds/Minecraft.mp3', soundLoaded, loadError);
+  drumSound = loadSound('./Sounds/Minecraft.mp3', soundLoaded, loadError);
 }
 
 function soundLoaded() {
@@ -20,8 +20,11 @@ function loadError(err) {
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-    synth = new p5.PolySynth(); // Initialize the synth
-    jumper = new Jumper();
+  synth = new p5.PolySynth(); // Initialize the synth
+  jumper = new Jumper();
+  textAlign(CENTER, CENTER);
+  textSize(16);
+  text('Click anywhere to start!', width / 2, height / 2);
 }
 
 function draw() {
@@ -35,10 +38,18 @@ function draw() {
   line(0, 150, width, 150);
 }
 
+function mousePressed() {
+  userStartAudio().then(() => {
+    console.log('AudioContext started successfully');
+    if (jumper && jumper.onGround) {
+      jumper.jump();
+    }
+  });
+}
+
 function keyPressed() {
-  if (jumper && key == ' ' && jumper.onGround) { 
-      jumper.velocity = jumpForce;
-      playNote();
+  if (keyCode === 32 && jumper && jumper.onGround) { // 32 is the keyCode for space
+      jumper.jump();
   }
 }
 
@@ -76,6 +87,11 @@ class Jumper {
   display() {
       fill(0);
       ellipse(this.x, this.y - 10, 20, 20); // Drawing the jumper as a simple circle
+  }
+
+  jump() {
+    this.velocity = jumpForce;
+    playNote();
   }
 }
 
