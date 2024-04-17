@@ -1,10 +1,9 @@
-let drumSound; // For the sample-based bass sound
-let synth; // For the synth-based sound
-let jumper; // Object representing the player
-let gravity = 0.6; // Gravity effect
-let jumpForce = -15; // Force of the jump
+let drumSound; // Sample-based bass sound
+let synth;
 let scale = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5']; // Musical scale
-let noteIndex = 0; // Index to track which note to play
+let blackKeys = {1: 'C#4', 2: 'D#4', 4: 'F#4', 5: 'G#4', 6: 'A#4'};
+let heldNotes = {}; // Track held notes
+let audioContextStarted = false; // Track if the audio context has been started
 
 function preload() {
   drumSound = loadSound('./Sounds/Minecraft.mp3', soundLoaded, loadError);
@@ -20,81 +19,93 @@ function loadError(err) {
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  synth = new p5.PolySynth(); // Initialize the synth
-  jumper = new Jumper();
+  synth = new p5.PolySynth();
   textAlign(CENTER, CENTER);
-  textSize(16);
-  text('Click anywhere to start!', width / 2, height / 2);
 }
 
 function draw() {
-  background(220);
-  
-  jumper.update();
-  jumper.display();
+  background(255);
+  drawPianoKeys();
+  drawStaff();
+}
 
-  // Draw the ground
+function drawPianoKeys() {
+  let keyWidth = width / scale.length;
+  let keyHeight = height / 4; // Change to 1/4th of the height for more realistic proportion
+
+  // Draw white keys
+  for (let i = 0; i < scale.length; i++) {
+    let x = i * keyWidth;
+    fill(255); // White key
+    stroke(0);
+    rect(x, height - keyHeight, keyWidth, keyHeight); // Draw at bottom of the canvas
+    fill(0);
+    textAlign(CENTER, CENTER);
+    text(scale[i], x + keyWidth / 2, height - keyHeight / 2);
+  }
+
+  // Draw black keys (visually only, interaction handled separately)
+  fill(0); // Black keys
+  for (let i in blackKeys) {
+    let x = i * keyWidth - keyWidth * 0.25;
+    rect(x, height - keyHeight, keyWidth * 0.5, keyHeight * 0.6);
+  }
+}
+
+function drawStaff() {
+  let staffY = height / 4;
+  let staffHeight = height / 20;
+
   stroke(0);
-  line(0, 150, width, 150);
+  strokeWeight(2);
+
+  // Drawing 5 lines of the staff
+  for (let i = 0; i < 5; i++) {
+    line(0, staffY + i * staffHeight, width, staffY + i * staffHeight);
+  }
 }
 
 function mousePressed() {
-  userStartAudio().then(() => {
-    console.log('AudioContext started successfully');
-    if (jumper && jumper.onGround) {
-      jumper.jump();
-    }
-  });
+  if (!audioContextStarted) {
+    userStartAudio().then(() => {
+      console.log('AudioContext started successfully');
+      drumSound.loop();
+      audioContextStarted = true;
+    });
+  }
+
+  let keyWidth = width / scale.length;
+  let keyHeight = height / 4;
+  let mouseXIndex = Math.floor(mouseX / keyWidth);
+  let mouseYIndex = mouseY > height - keyHeight && mouseY < height;
+
+  if (mouseYIndex && mouseXIndex >= 0 && mouseXIndex < scale.length) {
+    let note = scale[mouseXIndex];
+    synth.play(note, 0.5, 0, 0.5);
+    heldNotes[note] = mouseXIndex; // Visual feedback on the staff
+  }
 }
 
 function keyPressed() {
-  if (keyCode === 32 && jumper && jumper.onGround) { // 32 is the keyCode for space
-      jumper.jump();
+  let keyMappings = {'A': 0, 'S': 1, 'D': 2, 'F': 3, 'G': 4, 'H': 5, 'J': 6, 'K': 7};
+  let noteIndex = keyMappings[key.toUpperCase()];
+  if (noteIndex !== undefined) {
+    let note = scale[noteIndex];
+    synth.play(note, 0.5, 0, 0.5);
+    heldNotes[note] = noteIndex; // Visual feedback on the staff
   }
 }
 
-function playNote() {
-  let note = scale[noteIndex]; // Get the current note from the scale
-  synth.play(note, 0.5, 0, 0.5); // Play the note with synth
-  noteIndex = (noteIndex + 1) % scale.length; // Move to the next note in the scale, wrap around if needed
-}
-
-class Jumper {
-  constructor() {
-      this.x = 50;
-      this.y = 150;
-      this.velocity = 0;
-      this.onGround = true;
-  }
-
-  update() {
-      this.y += this.velocity;
-      this.velocity += gravity;
-
-      // Check for ground
-      if (this.y > 150) {
-          this.y = 150;
-          this.velocity = 0;
-          this.onGround = true;
-          if (!drumSound.isPlaying()) {
-              drumSound.play();
-          }
-      } else {
-          this.onGround = false;
-      }
-  }
-
-  display() {
-      fill(0);
-      ellipse(this.x, this.y - 10, 20, 20); // Drawing the jumper as a simple circle
-  }
-
-  jump() {
-    this.velocity = jumpForce;
-    playNote();
+function keyReleased() {
+  let keyMappings = {'A': 0, 'S': 1, 'D': 2, 'F': 3, 'G': 4, 'H': 5, 'J': 6, 'K': 7};
+  let noteIndex = keyMappings[key.toUpperCase()];
+  if (noteIndex !== undefined) {
+    let note = scale[noteIndex];
+    delete heldNotes[note];
   }
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
+
