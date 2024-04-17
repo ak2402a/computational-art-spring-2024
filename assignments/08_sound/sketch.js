@@ -31,37 +31,47 @@ function draw() {
 
 function drawPianoKeys() {
   let keyWidth = width / scale.length;
-  let keyHeight = height / 4; // Change to 1/4th of the height for more realistic proportion
+  let keyHeight = height / 4; // Adjusted key height
 
   // Draw white keys
   for (let i = 0; i < scale.length; i++) {
     let x = i * keyWidth;
     fill(255); // White key
     stroke(0);
-    rect(x, height - keyHeight, keyWidth, keyHeight); // Draw at bottom of the canvas
+    rect(x, height - keyHeight, keyWidth, keyHeight);
     fill(0);
     textAlign(CENTER, CENTER);
     text(scale[i], x + keyWidth / 2, height - keyHeight / 2);
   }
 
-  // Draw black keys (visually only, interaction handled separately)
-  fill(0); // Black keys
+  // Draw black keys
   for (let i in blackKeys) {
     let x = i * keyWidth - keyWidth * 0.25;
+    fill(0);
     rect(x, height - keyHeight, keyWidth * 0.5, keyHeight * 0.6);
   }
 }
 
 function drawStaff() {
-  let staffY = height / 4;
-  let staffHeight = height / 20;
+  let staffY = height / 8;
+  let staffHeight = height / 40;
 
   stroke(0);
   strokeWeight(2);
 
   // Drawing 5 lines of the staff
   for (let i = 0; i < 5; i++) {
-    line(0, staffY + i * staffHeight, width, staffY + i * staffHeight);
+    line(0, staffY + i * staffHeight * 2, width, staffY + i * staffHeight * 2);
+  }
+
+  // Draw notes on the staff
+  for (let note in heldNotes) {
+    let xPos = heldNotes[note] * width / scale.length + width / scale.length / 2;
+    let yPos = staffY;
+    fill(0);
+    ellipse(xPos, yPos, 10, 10);
+    fill(255);
+    text(note, xPos, yPos - 20); // Adjust text position to appear above the note
   }
 }
 
@@ -82,7 +92,8 @@ function mousePressed() {
   if (mouseYIndex && mouseXIndex >= 0 && mouseXIndex < scale.length) {
     let note = scale[mouseXIndex];
     synth.play(note, 0.5, 0, 0.5);
-    heldNotes[note] = mouseXIndex; // Visual feedback on the staff
+    heldNotes[note] = mouseXIndex; // Store index for visual feedback
+    setTimeout(() => { delete heldNotes[note]; }, 1000); // Note stays on the staff for 1 second
   }
 }
 
@@ -92,7 +103,8 @@ function keyPressed() {
   if (noteIndex !== undefined) {
     let note = scale[noteIndex];
     synth.play(note, 0.5, 0, 0.5);
-    heldNotes[note] = noteIndex; // Visual feedback on the staff
+    heldNotes[note] = noteIndex; // Store index for visual feedback
+    setTimeout(() => { delete heldNotes[note]; }, 1000); // Note stays on the staff for 1 second
   }
 }
 
