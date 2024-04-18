@@ -55,25 +55,43 @@ function drawPianoKeys() {
 function drawStaff() {
   let staffY = height / 8;
   let staffHeight = height / 40;
+  let staffSpacing = staffHeight * 2;
 
   stroke(0);
   strokeWeight(2);
 
   // Drawing 5 lines of the staff
   for (let i = 0; i < 5; i++) {
-    line(0, staffY + i * staffHeight * 2, width, staffY + i * staffHeight * 2);
+    line(0, staffY + i * staffSpacing, width, staffY + i * staffSpacing);
   }
 
-  // Draw notes on the staff
+  // Define note positions on the staff, mapping note names to y-positions
+  const notePositions = {
+    'C5': staffY - staffSpacing, 
+    'B4': staffY,
+    'A4': staffY + staffSpacing,
+    'G4': staffY + 2 * staffSpacing,
+    'F4': staffY + 3 * staffSpacing,
+    'E4': staffY + 4 * staffSpacing,
+    'D4': staffY + 5 * staffSpacing,
+    'C4': staffY + 6 * staffSpacing
+  };
+
+  // Draw notes on the staff as quarter notes
   for (let note in heldNotes) {
     let xPos = heldNotes[note] * width / scale.length + width / scale.length / 2;
-    let yPos = staffY;
+    let yPos = notePositions[note] || staffY; // Default to staffY if note is not in scale
+    let noteHeadDiameter = 10;
     fill(0);
-    ellipse(xPos, yPos, 10, 10);
+    ellipse(xPos, yPos, noteHeadDiameter, noteHeadDiameter); // Note head
+    // Calculate the x position of the right side of the note head for the stem
+    let stemBaseX = xPos + noteHeadDiameter / 2;
+    line(stemBaseX, yPos, stemBaseX, yPos - 1 * staffSpacing); // Note stem, shortened to 2 staff spacings
     fill(255);
     text(note, xPos, yPos - 20); // Adjust text position to appear above the note
   }
 }
+
 
 function mousePressed() {
   if (!audioContextStarted) {
