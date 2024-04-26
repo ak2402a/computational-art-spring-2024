@@ -1,12 +1,14 @@
-let drumSound; // Sample-based bass sound
-let synth;
-let scale = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5']; // Musical scale
-let blackKeys = {1: 'C#4', 2: 'D#4', 4: 'F#4', 5: 'G#4', 6: 'A#4'};
-let heldNotes = {}; // Track held notes
-let audioContextStarted = false; // Track if the audio context has been started
+let drumSound;
+let audioContextStarted = false;
+let glenImg, zombieImages = [];
+let glen, zombies = [];
 
 function preload() {
   drumSound = loadSound('./Sounds/ThemeSong.mp3', soundLoaded, loadError);
+  glenImg = loadImage("./Images/Glen.png");
+  zombieImages.push(loadImage("./Images/zombie-2.jpeg"));
+  zombieImages.push(loadImage("./Images/zombie-3.jpg"));
+  zombieImages.push(loadImage("./Images/zombie.jpeg"));
 }
 
 function soundLoaded() {
@@ -17,82 +19,6 @@ function loadError(err) {
   console.error('Error loading sound:', err);
 }
 
-function setup() {
-  createCanvas(windowWidth, windowHeight);
-  synth = new p5.PolySynth();
-  textAlign(CENTER, CENTER);
-}
-
-function draw() {
-  background(255);
-  drawPianoKeys();
-  drawStaff();
-}
-
-function drawPianoKeys() {
-  let keyWidth = width / scale.length;
-  let keyHeight = height / 4; // Adjusted key height
-
-  // Draw white keys
-  for (let i = 0; i < scale.length; i++) {
-    let x = i * keyWidth;
-    fill(255); // White key
-    stroke(0);
-    rect(x, height - keyHeight, keyWidth, keyHeight);
-    fill(0);
-    textAlign(CENTER, CENTER);
-    text(scale[i], x + keyWidth / 2, height - keyHeight / 2);
-  }
-
-  // Draw black keys
-  for (let i in blackKeys) {
-    let x = i * keyWidth - keyWidth * 0.25;
-    fill(0);
-    rect(x, height - keyHeight, keyWidth * 0.5, keyHeight * 0.6);
-  }
-}
-
-function drawStaff() {
-  let staffY = height / 8;
-  let staffHeight = height / 40;
-  let staffSpacing = staffHeight * 2;
-
-  stroke(0);
-  strokeWeight(2);
-
-  // Drawing 5 lines of the staff
-  for (let i = 0; i < 5; i++) {
-    line(0, staffY + i * staffSpacing, width, staffY + i * staffSpacing);
-  }
-
-  // Define note positions on the staff, mapping note names to y-positions
-  const notePositions = {
-    'C5': staffY - staffSpacing, 
-    'B4': staffY,
-    'A4': staffY + staffSpacing,
-    'G4': staffY + 2 * staffSpacing,
-    'F4': staffY + 3 * staffSpacing,
-    'E4': staffY + 4 * staffSpacing,
-    'D4': staffY + 5 * staffSpacing,
-    'C4': staffY + 6 * staffSpacing
-  };
-
-  // Draw notes on the staff as quarter notes
-  for (let note in heldNotes) {
-    let xPos = heldNotes[note] * width / scale.length + width / scale.length / 2;
-    let yPos = notePositions[note] || staffY; // Default to staffY if note is not in scale
-    let noteHeadDiameter = 10;
-    fill(0);
-    ellipse(xPos, yPos, noteHeadDiameter, noteHeadDiameter); // Note head
-    // Calculate the x position of the right side of the note head for the stem
-    let stemBaseX = xPos + noteHeadDiameter / 2;
-    line(stemBaseX, yPos, stemBaseX, yPos - 1 * staffSpacing); // Note stem, shortened to 2 staff spacings
-    fill(255);
-    text(note, xPos, yPos - 20); // Adjust text position to appear above the note
-  }
-}
-
-
 function mousePressed() {
   if (!audioContextStarted) {
     userStartAudio().then(() => {
@@ -101,41 +27,116 @@ function mousePressed() {
       audioContextStarted = true;
     });
   }
+}
 
-  let keyWidth = width / scale.length;
-  let keyHeight = height / 4;
-  let mouseXIndex = Math.floor(mouseX / keyWidth);
-  let mouseYIndex = mouseY > height - keyHeight && mouseY < height;
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  glen = new Character(glenImg, width / 2, height / 2, 3);
+  zombies = [];
 
-  if (mouseYIndex && mouseXIndex >= 0 && mouseXIndex < scale.length) {
-    let note = scale[mouseXIndex];
-    synth.play(note, 0.5, 0, 0.5);
-    heldNotes[note] = mouseXIndex; // Store index for visual feedback
-    setTimeout(() => { delete heldNotes[note]; }, 1000); // Note stays on the staff for 1 second
+  while (zombies.length < 20) {
+    let img = zombieImages[zombies.length % 3];
+    let candidate = new Character(img, random(width), random(height), 1);
+
+    let tooClose = zombies.some(z => dist(z.x, z.y, candidate.x, candidate.y) < z.radius + candidate.radius);
+    if (!tooClose) {
+      zombies.push(candidate);
+    }
   }
 }
 
-function keyPressed() {
-  let keyMappings = {'A': 0, 'S': 1, 'D': 2, 'F': 3, 'G': 4, 'H': 5, 'J': 6, 'K': 7};
-  let noteIndex = keyMappings[key.toUpperCase()];
-  if (noteIndex !== undefined) {
-    let note = scale[noteIndex];
-    synth.play(note, 0.5, 0, 0.5);
-    heldNotes[note] = noteIndex; // Store index for visual feedback
-    setTimeout(() => { delete heldNotes[note]; }, 1000); // Note stays on the staff for 1 second
+
+class Character {
+  
+  constructor(img, x, y, speed) {
+    this.img = img;
+    this.x = x;
+    this.y = y;
+    this.speed = speed;
+    this.radius = 25; // Assuming images are roughly 50x50 pixels
+    this.vx = random(-1, 1) * speed; // Adding velocity in x
+    this.vy = random(-1, 1) * speed; // Adding velocity in y
+  }
+  handleInput() {
+    if (keyIsDown(LEFT_ARROW)) {
+      this.x -= this.speed;
+    }
+    if (keyIsDown(RIGHT_ARROW)) {
+      this.x += this.speed;
+    }
+    if (keyIsDown(UP_ARROW)) {
+      this.y -= this.speed;
+    }
+    if (keyIsDown(DOWN_ARROW)) {
+      this.y += this.speed;
+    }
+  }
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+
+    // Add boundary checks to keep zombies within the canvas
+    if (this.x < this.radius || this.x > width - this.radius) {
+      this.vx *= -1;
+    }
+    if (this.y < this.radius || this.y > height - this.radius) {
+      this.vy *= -1;
+    }
+  }
+
+  follow(target) {
+    let angle = atan2(target.y - this.y, target.x - this.x);
+    this.vx = this.speed * cos(angle);
+    this.vy = this.speed * sin(angle);
+  }
+
+  bounceOff(other) {
+    let dx = this.x - other.x;
+    let dy = this.y - other.y;
+    let distance = sqrt(dx * dx + dy * dy);
+
+    if (distance < this.radius + other.radius) {
+      let angle = atan2(dy, dx);
+      let minDistance = this.radius + other.radius;
+      let overlap = (minDistance - distance) / 2;
+
+      this.x += cos(angle) * overlap;
+      this.y += sin(angle) * overlap;
+      other.x -= cos(angle) * overlap;
+      other.y -= sin(angle) * overlap;
+
+      // Reverse velocities to simulate bounce
+      this.vx *= -1;
+      this.vy *= -1;
+      other.vx *= -1;
+      other.vy *= -1;
+    }
+  }
+
+  display() {
+    image(this.img, this.x, this.y, 50, 50);
   }
 }
 
-function keyReleased() {
-  let keyMappings = {'A': 0, 'S': 1, 'D': 2, 'F': 3, 'G': 4, 'H': 5, 'J': 6, 'K': 7};
-  let noteIndex = keyMappings[key.toUpperCase()];
-  if (noteIndex !== undefined) {
-    let note = scale[noteIndex];
-    delete heldNotes[note];
+
+function draw() {
+  background(255);
+  glen.handleInput();
+  glen.display();
+
+  // Update and display each zombie, check for collisions, and make them follow Glen
+  for (let i = 0; i < zombies.length; i++) {
+    zombies[i].follow(glen);  // Make each zombie follow Glen
+    zombies[i].update();      // Update position based on velocity
+
+    for (let j = i + 1; j < zombies.length; j++) {
+      zombies[i].bounceOff(zombies[j]);
+    }
+
+    zombies[i].display();
   }
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
-
