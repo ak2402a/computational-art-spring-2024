@@ -6,7 +6,7 @@ let heldNotes = {}; // Track held notes
 let audioContextStarted = false; // Track if the audio context has been started
 
 function preload() {
-  drumSound = loadSound('./Sounds/Minecraft.mp3', soundLoaded, loadError);
+  drumSound = loadSound('./Sounds/ThemeSong.mp3', soundLoaded, loadError);
 }
 
 function soundLoaded() {
